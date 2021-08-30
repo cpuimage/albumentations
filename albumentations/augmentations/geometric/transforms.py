@@ -28,6 +28,9 @@ class ShiftScaleRotate(DualTransform):
         border_mode (OpenCV flag): flag that is used to specify the pixel extrapolation method. Should be one of:
             cv2.BORDER_CONSTANT, cv2.BORDER_REPLICATE, cv2.BORDER_REFLECT, cv2.BORDER_WRAP, cv2.BORDER_REFLECT_101.
             Default: cv2.BORDER_REFLECT_101
+        mask_border_mode (OpenCV flag): flag that is used to specify the pixel extrapolation method applied for masks. Should be one of:
+            cv2.BORDER_CONSTANT, cv2.BORDER_REPLICATE, cv2.BORDER_REFLECT, cv2.BORDER_WRAP, cv2.BORDER_REFLECT_101.
+            Default: cv2.BORDER_REFLECT_101
         value (int, float, list of int, list of float): padding value if border_mode is cv2.BORDER_CONSTANT.
         mask_value (int, float,
                     list of int,
@@ -56,6 +59,7 @@ class ShiftScaleRotate(DualTransform):
         rotate_limit=45,
         interpolation=cv2.INTER_LINEAR,
         border_mode=cv2.BORDER_REFLECT_101,
+        mask_border_mode=cv2.BORDER_REFLECT_101,
         value=None,
         mask_value=None,
         shift_limit_x=None,
@@ -70,6 +74,7 @@ class ShiftScaleRotate(DualTransform):
         self.rotate_limit = to_tuple(rotate_limit)
         self.interpolation = interpolation
         self.border_mode = border_mode
+        self.mask_border_mode = mask_border_mode
         self.value = value
         self.mask_value = mask_value
 
@@ -77,7 +82,7 @@ class ShiftScaleRotate(DualTransform):
         return F.shift_scale_rotate(img, angle, scale, dx, dy, interpolation, self.border_mode, self.value)
 
     def apply_to_mask(self, img, angle=0, scale=0, dx=0, dy=0, **params):
-        return F.shift_scale_rotate(img, angle, scale, dx, dy, cv2.INTER_NEAREST, self.border_mode, self.mask_value)
+        return F.shift_scale_rotate(img, angle, scale, dx, dy, cv2.INTER_NEAREST, self.mask_border_mode, self.mask_value)
 
     def apply_to_keypoint(self, keypoint, angle=0, scale=0, dx=0, dy=0, rows=0, cols=0, **params):
         return F.keypoint_shift_scale_rotate(keypoint, angle, scale, dx, dy, rows, cols)
@@ -101,6 +106,7 @@ class ShiftScaleRotate(DualTransform):
             "rotate_limit": self.rotate_limit,
             "interpolation": self.interpolation,
             "border_mode": self.border_mode,
+            "mask_border_mode": self.mask_border_mode,
             "value": self.value,
             "mask_value": self.mask_value,
         }
@@ -125,6 +131,9 @@ class ElasticTransform(DualTransform):
         border_mode (OpenCV flag): flag that is used to specify the pixel extrapolation method. Should be one of:
             cv2.BORDER_CONSTANT, cv2.BORDER_REPLICATE, cv2.BORDER_REFLECT, cv2.BORDER_WRAP, cv2.BORDER_REFLECT_101.
             Default: cv2.BORDER_REFLECT_101
+        mask_border_mode (OpenCV flag): flag that is used to specify the pixel extrapolation method applied for masks. Should be one of:
+            cv2.BORDER_CONSTANT, cv2.BORDER_REPLICATE, cv2.BORDER_REFLECT, cv2.BORDER_WRAP, cv2.BORDER_REFLECT_101.
+            Default: cv2.BORDER_REFLECT_101
         value (int, float, list of ints, list of float): padding value if border_mode is cv2.BORDER_CONSTANT.
         mask_value (int, float,
                     list of ints,
@@ -146,6 +155,7 @@ class ElasticTransform(DualTransform):
         alpha_affine=50,
         interpolation=cv2.INTER_LINEAR,
         border_mode=cv2.BORDER_REFLECT_101,
+        mask_border_mode=cv2.BORDER_REFLECT_101,
         value=None,
         mask_value=None,
         always_apply=False,
@@ -158,6 +168,7 @@ class ElasticTransform(DualTransform):
         self.sigma = sigma
         self.interpolation = interpolation
         self.border_mode = border_mode
+        self.mask_border_mode = mask_border_mode
         self.value = value
         self.mask_value = mask_value
         self.approximate = approximate
@@ -182,7 +193,7 @@ class ElasticTransform(DualTransform):
             self.sigma,
             self.alpha_affine,
             cv2.INTER_NEAREST,
-            self.border_mode,
+            self.mask_border_mode,
             self.mask_value,
             np.random.RandomState(random_state),
             self.approximate,
@@ -192,7 +203,7 @@ class ElasticTransform(DualTransform):
         return {"random_state": random.randint(0, 10000)}
 
     def get_transform_init_args_names(self):
-        return ("alpha", "sigma", "alpha_affine", "interpolation", "border_mode", "value", "mask_value", "approximate")
+        return ("alpha", "sigma", "alpha_affine", "interpolation", "border_mode", "mask_border_mode", "value", "mask_value", "approximate")
 
 
 class Perspective(DualTransform):

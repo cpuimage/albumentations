@@ -91,6 +91,7 @@ class PadIfNeeded(DualTransform):
             PositionType.TOP_LEFT or PositionType.TOP_RIGHT or PositionType.BOTTOM_LEFT or PositionType.BOTTOM_RIGHT.
             Default: PositionType.CENTER.
         border_mode (OpenCV flag): OpenCV border mode.
+        mask_border_mode (OpenCV flag): OpenCV border mode for mask.
         value (int, float, list of int, list of float): padding value if border_mode is cv2.BORDER_CONSTANT.
         mask_value (int, float,
                     list of int,
@@ -119,6 +120,7 @@ class PadIfNeeded(DualTransform):
         pad_width_divisor: Optional[int] = None,
         position: Union[PositionType, str] = PositionType.CENTER,
         border_mode=cv2.BORDER_REFLECT_101,
+        mask_border_mode=cv2.BORDER_REFLECT_101,
         value=None,
         mask_value=None,
         always_apply=False,
@@ -137,6 +139,7 @@ class PadIfNeeded(DualTransform):
         self.pad_height_divisor = pad_height_divisor
         self.position = PadIfNeeded.PositionType(position)
         self.border_mode = border_mode
+        self.mask_border_mode = mask_border_mode
         self.value = value
         self.mask_value = mask_value
 
@@ -205,7 +208,7 @@ class PadIfNeeded(DualTransform):
             pad_bottom,
             pad_left,
             pad_right,
-            border_mode=self.border_mode,
+            border_mode=self.mask_border_mode,
             value=self.mask_value,
         )
 
@@ -226,6 +229,7 @@ class PadIfNeeded(DualTransform):
             "pad_height_divisor",
             "pad_width_divisor",
             "border_mode",
+            "mask_border_mode",
             "value",
             "mask_value",
         )
@@ -391,6 +395,9 @@ class OpticalDistortion(DualTransform):
         border_mode (OpenCV flag): flag that is used to specify the pixel extrapolation method. Should be one of:
             cv2.BORDER_CONSTANT, cv2.BORDER_REPLICATE, cv2.BORDER_REFLECT, cv2.BORDER_WRAP, cv2.BORDER_REFLECT_101.
             Default: cv2.BORDER_REFLECT_101
+        mask_border_mode (OpenCV flag): flag that is used to specify the pixel extrapolation method applied for masks. Should be one of:
+            cv2.BORDER_CONSTANT, cv2.BORDER_REPLICATE, cv2.BORDER_REFLECT, cv2.BORDER_WRAP, cv2.BORDER_REFLECT_101.
+            Default: cv2.BORDER_REFLECT_101
         value (int, float, list of ints, list of float): padding value if border_mode is cv2.BORDER_CONSTANT.
         mask_value (int, float,
                     list of ints,
@@ -409,6 +416,7 @@ class OpticalDistortion(DualTransform):
         shift_limit=0.05,
         interpolation=cv2.INTER_LINEAR,
         border_mode=cv2.BORDER_REFLECT_101,
+        mask_border_mode=cv2.BORDER_REFLECT_101,
         value=None,
         mask_value=None,
         always_apply=False,
@@ -419,6 +427,7 @@ class OpticalDistortion(DualTransform):
         self.distort_limit = to_tuple(distort_limit)
         self.interpolation = interpolation
         self.border_mode = border_mode
+        self.mask_border_mode = mask_border_mode
         self.value = value
         self.mask_value = mask_value
 
@@ -426,7 +435,7 @@ class OpticalDistortion(DualTransform):
         return F.optical_distortion(img, k, dx, dy, interpolation, self.border_mode, self.value)
 
     def apply_to_mask(self, img, k=0, dx=0, dy=0, **params):
-        return F.optical_distortion(img, k, dx, dy, cv2.INTER_NEAREST, self.border_mode, self.mask_value)
+        return F.optical_distortion(img, k, dx, dy, cv2.INTER_NEAREST, self.mask_border_mode, self.mask_value)
 
     def get_params(self):
         return {
@@ -441,6 +450,7 @@ class OpticalDistortion(DualTransform):
             "shift_limit",
             "interpolation",
             "border_mode",
+            "mask_border_mode",
             "value",
             "mask_value",
         )
@@ -456,6 +466,9 @@ class GridDistortion(DualTransform):
             cv2.INTER_NEAREST, cv2.INTER_LINEAR, cv2.INTER_CUBIC, cv2.INTER_AREA, cv2.INTER_LANCZOS4.
             Default: cv2.INTER_LINEAR.
         border_mode (OpenCV flag): flag that is used to specify the pixel extrapolation method. Should be one of:
+            cv2.BORDER_CONSTANT, cv2.BORDER_REPLICATE, cv2.BORDER_REFLECT, cv2.BORDER_WRAP, cv2.BORDER_REFLECT_101.
+            Default: cv2.BORDER_REFLECT_101
+        mask_border_mode (OpenCV flag): flag that is used to specify the pixel extrapolation method applied for masks. Should be one of:
             cv2.BORDER_CONSTANT, cv2.BORDER_REPLICATE, cv2.BORDER_REFLECT, cv2.BORDER_WRAP, cv2.BORDER_REFLECT_101.
             Default: cv2.BORDER_REFLECT_101
         value (int, float, list of ints, list of float): padding value if border_mode is cv2.BORDER_CONSTANT.
@@ -476,6 +489,7 @@ class GridDistortion(DualTransform):
         distort_limit=0.3,
         interpolation=cv2.INTER_LINEAR,
         border_mode=cv2.BORDER_REFLECT_101,
+        mask_border_mode=cv2.BORDER_REFLECT_101,
         value=None,
         mask_value=None,
         always_apply=False,
@@ -486,6 +500,7 @@ class GridDistortion(DualTransform):
         self.distort_limit = to_tuple(distort_limit)
         self.interpolation = interpolation
         self.border_mode = border_mode
+        self.mask_border_mode = mask_border_mode
         self.value = value
         self.mask_value = mask_value
 
@@ -507,7 +522,7 @@ class GridDistortion(DualTransform):
             stepsx,
             stepsy,
             cv2.INTER_NEAREST,
-            self.border_mode,
+            self.mask_border_mode,
             self.mask_value,
         )
 
@@ -522,6 +537,7 @@ class GridDistortion(DualTransform):
             "distort_limit",
             "interpolation",
             "border_mode",
+            "mask_border_mode",
             "value",
             "mask_value",
         )
