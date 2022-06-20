@@ -4,21 +4,22 @@ import random
 from unittest.mock import patch
 
 import cv2
-import pytest
 import numpy as np
+import pytest
 
 import albumentations as A
 import albumentations.augmentations.functional as F
 from albumentations.core.serialization import SERIALIZABLE_REGISTRY, shorten_class_name
 from albumentations.core.transforms_interface import ImageOnlyTransform
+
 from .conftest import skipif_no_torch
 from .utils import (
     OpenMock,
-    set_seed,
-    get_transforms,
-    get_image_only_transforms,
-    get_dual_transforms,
     check_all_augs_exists,
+    get_dual_transforms,
+    get_image_only_transforms,
+    get_transforms,
+    set_seed,
 )
 
 TEST_SEEDS = (0, 1, 42, 111, 9999)
@@ -44,6 +45,7 @@ TEST_SEEDS = (0, 1, 42, 111, 9999)
             A.HistogramMatching,
             A.PixelDistributionAdaptation,
             A.Lambda,
+            A.TemplateTransform,
         },
     ),
 )
@@ -311,6 +313,11 @@ AUGMENTATION_CLS_PARAMS = [
     [A.ToSepia, {}],
     [A.Transpose, {}],
     [A.VerticalFlip, {}],
+    [A.RingingOvershoot, dict(blur_limit=(7, 15), cutoff=(np.pi / 5, np.pi / 2))],
+    [A.UnsharpMask, {"blur_limit": 3, "sigma_limit": 0.5, "alpha": 0.2, "threshold": 15}],
+    [A.AdvancedBlur, dict(blur_limit=(3, 5), rotate_limit=(60, 90))],
+    [A.PixelDropout, {"dropout_prob": 0.1, "per_channel": True, "drop_value": None}],
+    [A.PixelDropout, {"dropout_prob": 0.1, "per_channel": False, "drop_value": None, "mask_drop_value": 15}],
 ]
 
 AUGMENTATION_CLS_EXCEPT = {
@@ -322,6 +329,7 @@ AUGMENTATION_CLS_EXCEPT = {
     A.RandomSizedBBoxSafeCrop,
     A.GridDropout,
     A.GlassBlur,
+    A.TemplateTransform,
 }
 
 
@@ -396,6 +404,7 @@ def test_augmentations_serialization_to_file_with_custom_parameters(
             A.GridDropout,
             A.MaskDropout,
             A.OpticalDistortion,
+            A.TemplateTransform,
         },
     ),
 )
@@ -444,6 +453,7 @@ def test_augmentations_for_bboxes_serialization(
             A.MaskDropout,
             A.OpticalDistortion,
             A.RandomSizedBBoxSafeCrop,
+            A.TemplateTransform,
         },
     ),
 )
@@ -623,7 +633,7 @@ def test_transform_pipeline_serialization_with_keypoints(seed, image, keypoints,
 @pytest.mark.parametrize(
     ["augmentation_cls", "params"],
     get_image_only_transforms(
-        except_augmentations={A.HistogramMatching, A.FDA, A.PixelDistributionAdaptation},
+        except_augmentations={A.HistogramMatching, A.FDA, A.PixelDistributionAdaptation, A.TemplateTransform},
     ),
 )
 @pytest.mark.parametrize("seed", TEST_SEEDS)
@@ -673,41 +683,41 @@ def test_lambda_serialization(image, mask, albumentations_bboxes, keypoints, see
 def test_serialization_v2_conversion_without_totensor():
     current_directory = os.path.dirname(os.path.abspath(__file__))
     files_directory = os.path.join(current_directory, "files")
-    transform_0_4_6 = A.load(os.path.join(files_directory, "transform_v0.4.6_without_totensor.json"))
-    with open(os.path.join(files_directory, "output_v0.4.6_without_totensor.json")) as f:
-        output_0_4_6 = json.load(f)
+    transform_1_1_0 = A.load(os.path.join(files_directory, "transform_v1.1.0_without_totensor.json"))
+    with open(os.path.join(files_directory, "output_v1.1.0_without_totensor.json")) as f:
+        output_1_1_0 = json.load(f)
     np.random.seed(42)
     image = np.random.randint(low=0, high=255, size=(256, 256, 3), dtype=np.uint8)
     random.seed(42)
-    transformed_image = transform_0_4_6(image=image)["image"]
-    assert transformed_image.tolist() == output_0_4_6
+    transformed_image = transform_1_1_0(image=image)["image"]
+    assert transformed_image.tolist() == output_1_1_0
 
 
 @skipif_no_torch
 def test_serialization_v2_conversion_with_totensor():
     current_directory = os.path.dirname(os.path.abspath(__file__))
     files_directory = os.path.join(current_directory, "files")
-    transform_0_4_6 = A.load(os.path.join(files_directory, "transform_v0.4.6_with_totensor.json"))
-    with open(os.path.join(files_directory, "output_v0.4.6_with_totensor.json")) as f:
-        output_0_4_6 = json.load(f)
+    transform_1_1_0 = A.load(os.path.join(files_directory, "transform_v1.1.0_with_totensor.json"))
+    with open(os.path.join(files_directory, "output_v1.1.0_with_totensor.json")) as f:
+        output_1_1_0 = json.load(f)
     np.random.seed(42)
     image = np.random.randint(low=0, high=255, size=(256, 256, 3), dtype=np.uint8)
     random.seed(42)
-    transformed_image = transform_0_4_6(image=image)["image"]
-    assert transformed_image.numpy().tolist() == output_0_4_6
+    transformed_image = transform_1_1_0(image=image)["image"]
+    assert transformed_image.numpy().tolist() == output_1_1_0
 
 
 def test_serialization_v2_without_totensor():
     current_directory = os.path.dirname(os.path.abspath(__file__))
     files_directory = os.path.join(current_directory, "files")
     transform = A.load(os.path.join(files_directory, "transform_serialization_v2_without_totensor.json"))
-    with open(os.path.join(files_directory, "output_v0.4.6_without_totensor.json")) as f:
-        output_0_4_6 = json.load(f)
+    with open(os.path.join(files_directory, "output_v1.1.0_without_totensor.json")) as f:
+        output_1_1_0 = json.load(f)
     np.random.seed(42)
     image = np.random.randint(low=0, high=255, size=(256, 256, 3), dtype=np.uint8)
     random.seed(42)
     transformed_image = transform(image=image)["image"]
-    assert transformed_image.tolist() == output_0_4_6
+    assert transformed_image.tolist() == output_1_1_0
 
 
 @skipif_no_torch
@@ -715,13 +725,13 @@ def test_serialization_v2_with_totensor():
     current_directory = os.path.dirname(os.path.abspath(__file__))
     files_directory = os.path.join(current_directory, "files")
     transform = A.load(os.path.join(files_directory, "transform_serialization_v2_with_totensor.json"))
-    with open(os.path.join(files_directory, "output_v0.4.6_with_totensor.json")) as f:
-        output_0_4_6 = json.load(f)
+    with open(os.path.join(files_directory, "output_v1.1.0_with_totensor.json")) as f:
+        output_1_1_0 = json.load(f)
     np.random.seed(42)
     image = np.random.randint(low=0, high=255, size=(256, 256, 3), dtype=np.uint8)
     random.seed(42)
     transformed_image = transform(image=image)["image"]
-    assert transformed_image.numpy().tolist() == output_0_4_6
+    assert transformed_image.numpy().tolist() == output_1_1_0
 
 
 def test_custom_transform_with_overlapping_name():
@@ -755,3 +765,21 @@ def test_serialization_v2_to_dict():
 )
 def test_shorten_class_name(class_fullname, expected_short_class_name):
     assert shorten_class_name(class_fullname) == expected_short_class_name
+
+
+@pytest.mark.parametrize("seed", TEST_SEEDS)
+@pytest.mark.parametrize("p", [1])
+def test_template_transform_serialization(image, template, seed, p):
+    template_transform = A.TemplateTransform(name="template", templates=template, p=p)
+
+    aug = A.Compose([A.Flip(), template_transform, A.Blur()])
+
+    serialized_aug = A.to_dict(aug)
+    deserialized_aug = A.from_dict(serialized_aug, lambda_transforms={"template": template_transform})
+
+    set_seed(seed)
+    aug_data = aug(image=image)
+    set_seed(seed)
+    deserialized_aug_data = deserialized_aug(image=image)
+
+    assert np.array_equal(aug_data["image"], deserialized_aug_data["image"])

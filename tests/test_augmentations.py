@@ -1,5 +1,5 @@
 import random
-from typing import Type, Dict, Tuple
+from typing import Dict, Tuple, Type
 
 import cv2
 import numpy as np
@@ -7,7 +7,7 @@ import pytest
 
 import albumentations as A
 
-from .utils import get_image_only_transforms, get_dual_transforms, get_transforms
+from .utils import get_dual_transforms, get_image_only_transforms, get_transforms
 
 
 @pytest.mark.parametrize(
@@ -26,6 +26,9 @@ from .utils import get_image_only_transforms, get_dual_transforms, get_transform
                 "reference_images": [np.random.randint(0, 256, [100, 100, 3], dtype=np.uint8)],
                 "read_fn": lambda x: x,
                 "transform_type": "standard",
+            },
+            A.TemplateTransform: {
+                "templates": np.random.randint(low=0, high=256, size=(100, 100, 3), dtype=np.uint8),
             },
         },
         except_augmentations={A.FromFloat, A.Normalize, A.ToFloat},
@@ -44,19 +47,23 @@ def test_image_only_augmentations(augmentation_cls, params, image, mask):
     get_image_only_transforms(
         custom_arguments={
             A.HistogramMatching: {
-                "reference_images": [np.random.randint(0, 256, [100, 100, 3], dtype=np.uint8)],
+                "reference_images": [np.random.uniform(low=0.0, high=1.0, size=(100, 100, 3)).astype(np.float32)],
                 "read_fn": lambda x: x,
             },
             A.FDA: {
-                "reference_images": [np.random.randint(0, 256, [100, 100, 3], dtype=np.uint8)],
+                "reference_images": [np.random.uniform(low=0.0, high=1.0, size=(100, 100, 3)).astype(np.float32)],
                 "read_fn": lambda x: x,
             },
             A.PixelDistributionAdaptation: {
-                "reference_images": [np.random.randint(0, 256, [100, 100, 3], dtype=np.uint8)],
+                "reference_images": [np.random.uniform(low=0.0, high=1.0, size=(100, 100, 3)).astype(np.float32)],
                 "read_fn": lambda x: x,
                 "transform_type": "standard",
             },
             A.MedianBlur: {"blur_limit": (3, 5)},
+            A.TemplateTransform: {
+                "templates": np.random.uniform(low=0.0, high=1.0, size=(100, 100, 3)).astype(np.float32),
+            },
+            A.RingingOvershoot: {"blur_limit": (3, 5)},
         },
         except_augmentations={
             A.CLAHE,
@@ -148,6 +155,9 @@ def test_dual_augmentations_with_float_values(augmentation_cls, params, float_im
             A.RandomSizedCrop: {"min_max_height": (4, 8), "height": 10, "width": 10},
             A.CropAndPad: {"px": 10},
             A.Resize: {"height": 10, "width": 10},
+            A.TemplateTransform: {
+                "templates": np.random.randint(low=0, high=256, size=(100, 100, 3), dtype=np.uint8),
+            },
         },
         except_augmentations={A.RandomCropNearBBox, A.RandomSizedBBoxSafeCrop},
     ),
@@ -166,15 +176,15 @@ def test_augmentations_wont_change_input(augmentation_cls, params, image, mask):
     get_transforms(
         custom_arguments={
             A.HistogramMatching: {
-                "reference_images": [np.random.randint(0, 256, [100, 100, 3], dtype=np.uint8)],
+                "reference_images": [np.random.uniform(low=0.0, high=1.0, size=(100, 100, 3)).astype(np.float32)],
                 "read_fn": lambda x: x,
             },
             A.FDA: {
-                "reference_images": [np.random.randint(0, 256, [100, 100, 3], dtype=np.uint8)],
+                "reference_images": [np.random.uniform(low=0.0, high=1.0, size=(100, 100, 3)).astype(np.float32)],
                 "read_fn": lambda x: x,
             },
             A.PixelDistributionAdaptation: {
-                "reference_images": [np.random.randint(0, 256, [100, 100, 3], dtype=np.uint8)],
+                "reference_images": [np.random.uniform(low=0.0, high=1.0, size=(100, 100, 3)).astype(np.float32)],
                 "read_fn": lambda x: x,
                 "transform_type": "standard",
             },
@@ -187,6 +197,9 @@ def test_augmentations_wont_change_input(augmentation_cls, params, image, mask):
             A.RandomSizedCrop: {"min_max_height": (4, 8), "height": 10, "width": 10},
             A.CropAndPad: {"px": 10},
             A.Resize: {"height": 10, "width": 10},
+            A.TemplateTransform: {
+                "templates": np.random.uniform(low=0.0, high=1.0, size=(100, 100, 3)).astype(np.float32),
+            },
         },
         except_augmentations={
             A.CLAHE,
@@ -222,6 +235,9 @@ def test_augmentations_wont_change_float_input(augmentation_cls, params, float_i
                 "read_fn": lambda x: x,
             },
             A.Normalize: {"mean": 0, "std": 1},
+            A.TemplateTransform: {
+                "templates": np.random.randint(low=0, high=256, size=(224, 224), dtype=np.uint8),
+            },
         },
         except_augmentations={
             A.ChannelDropout,
@@ -250,6 +266,7 @@ def test_augmentations_wont_change_float_input(augmentation_cls, params, float_i
             A.RandomSunFlare,
             A.ToSepia,
             A.PixelDistributionAdaptation,
+            A.UnsharpMask,
         },
     ),
 )
@@ -288,6 +305,9 @@ def test_augmentations_wont_change_shape_grayscale(augmentation_cls, params, ima
                 "reference_images": [np.random.randint(0, 256, [100, 100, 3], dtype=np.uint8)],
                 "read_fn": lambda x: x,
                 "transform_type": "standard",
+            },
+            A.TemplateTransform: {
+                "templates": np.random.randint(0, 256, (224, 224, 3), dtype=np.uint8),
             },
         },
         except_augmentations={
@@ -373,6 +393,9 @@ def test_mask_fill_value(augmentation_cls, params):
             A.RandomSizedCrop: {"min_max_height": (4, 8), "height": 10, "width": 10},
             A.CropAndPad: {"px": 10},
             A.Resize: {"height": 10, "width": 10},
+            A.TemplateTransform: {
+                "templates": np.random.randint(0, 256, (100, 100, 6), dtype=np.uint8),
+            },
         },
         except_augmentations={
             A.CLAHE,
@@ -413,7 +436,7 @@ def test_multichannel_image_augmentations(augmentation_cls, params):
     get_transforms(
         custom_arguments={
             A.HistogramMatching: {
-                "reference_images": [np.random.randint(0, 256, [100, 100, 6], dtype=np.uint8)],
+                "reference_images": [np.random.uniform(0.0, 1.0, (100, 100, 6)).astype(np.float32)],
                 "read_fn": lambda x: x,
             },
             A.FDA: {
@@ -429,6 +452,9 @@ def test_multichannel_image_augmentations(augmentation_cls, params):
             A.Resize: {"height": 10, "width": 10},
             A.Normalize: {"mean": 0, "std": 1},
             A.MedianBlur: {"blur_limit": (3, 5)},
+            A.TemplateTransform: {
+                "templates": np.random.uniform(0.0, 1.0, (100, 100, 6)).astype(np.float32),
+            },
         },
         except_augmentations={
             A.CLAHE,
@@ -476,6 +502,9 @@ def test_float_multichannel_image_augmentations(augmentation_cls, params):
             A.RandomSizedCrop: {"min_max_height": (4, 8), "height": 10, "width": 10},
             A.CropAndPad: {"px": 10},
             A.Resize: {"height": 10, "width": 10},
+            A.TemplateTransform: {
+                "templates": np.random.randint(0, 1, (100, 100), dtype=np.uint8),
+            },
         },
         except_augmentations={
             A.CLAHE,
@@ -527,6 +556,9 @@ def test_multichannel_image_augmentations_diff_channels(augmentation_cls, params
             A.Resize: {"height": 10, "width": 10},
             A.Normalize: {"mean": 0, "std": 1},
             A.MedianBlur: {"blur_limit": (3, 5)},
+            A.TemplateTransform: {
+                "templates": np.random.uniform(0.0, 1.0, (100, 100, 1)).astype(np.float32),
+            },
         },
         except_augmentations={
             A.CLAHE,
@@ -632,9 +664,12 @@ def test_pad_if_needed(augmentation_cls: Type[A.PadIfNeeded], params: Dict, imag
         [{"min_height": 10, "min_width": 12, "border_mode": 0, "value": 1, "position": "top_right"}, (5, 6)],
         [{"min_height": 10, "min_width": 12, "border_mode": 0, "value": 1, "position": "bottom_left"}, (5, 6)],
         [{"min_height": 10, "min_width": 12, "border_mode": 0, "value": 1, "position": "bottom_right"}, (5, 6)],
+        [{"min_height": 10, "min_width": 12, "border_mode": 0, "value": 1, "position": "random"}, (5, 6)],
     ],
 )
 def test_pad_if_needed_position(params, image_shape):
+    random.seed(42)
+
     image = np.zeros(image_shape)
     pad = A.PadIfNeeded(**params)
     image_padded = pad(image=image)["image"]
@@ -659,8 +694,12 @@ def test_pad_if_needed_position(params, image_shape):
         true_result[-image_shape[0] :, : image_shape[1]] = 0
         assert (image_padded == true_result).all()
 
-    if params["position"] == "bottom_right":
+    elif params["position"] == "bottom_right":
         true_result[-image_shape[0] :, -image_shape[1] :] = 0
+        assert (image_padded == true_result).all()
+
+    elif params["position"] == "random":
+        true_result[0:5, -7:-1] = 0
         assert (image_padded == true_result).all()
 
 
@@ -755,3 +794,72 @@ def test_pixel_domain_adaptation(kind):
             atol=2 if img.dtype == np.uint8 else 0.01,
             err_msg=f"{adapted.mean()} {img.mean()} {ref_img.mean()}",
         )
+
+
+@pytest.mark.parametrize(
+    ["augmentation_cls", "params"],
+    get_transforms(
+        custom_arguments={
+            # only image
+            A.HistogramMatching: {
+                "reference_images": [np.random.uniform(low=0.0, high=1.0, size=(100, 100, 3)).astype(np.uint8)],
+                "read_fn": lambda x: x,
+            },
+            A.FDA: {
+                "reference_images": [np.random.uniform(low=0.0, high=1.0, size=(100, 100, 3)).astype(np.uint8)],
+                "read_fn": lambda x: x,
+            },
+            A.PixelDistributionAdaptation: {
+                "reference_images": [np.random.uniform(low=0.0, high=1.0, size=(100, 100, 3)).astype(np.uint8)],
+                "read_fn": lambda x: x,
+                "transform_type": "standard",
+            },
+            A.MedianBlur: {"blur_limit": (3, 5)},
+            A.TemplateTransform: {
+                "templates": np.random.uniform(low=0.0, high=1.0, size=(100, 100, 3)).astype(np.uint8),
+            },
+            A.RingingOvershoot: {"blur_limit": (3, 5)},
+            # dual
+            A.Crop: {"y_min": 0, "y_max": 10, "x_min": 0, "x_max": 10},
+            A.CenterCrop: {"height": 10, "width": 10},
+            A.CropNonEmptyMaskIfExists: {"height": 10, "width": 10},
+            A.RandomCrop: {"height": 10, "width": 10},
+            A.RandomResizedCrop: {"height": 10, "width": 10},
+            A.RandomSizedCrop: {"min_max_height": (4, 8), "height": 10, "width": 10},
+            A.CropAndPad: {"px": 10},
+            A.Resize: {"height": 10, "width": 10},
+            A.RandomSizedBBoxSafeCrop: {"height": 10, "width": 10},
+        },
+    ),
+)
+def test_non_contiguous_input(augmentation_cls, params, bboxes):
+
+    image = np.empty([3, 100, 100], dtype=np.uint8).transpose(1, 2, 0)
+    mask = np.empty([3, 100, 100], dtype=np.uint8).transpose(1, 2, 0)
+
+    # check preconditions
+    assert not image.flags["C_CONTIGUOUS"]
+    assert not mask.flags["C_CONTIGUOUS"]
+
+    if augmentation_cls == A.RandomCropNearBBox:
+        # requires "cropping_bbox" arg
+        aug = augmentation_cls(p=1, **params)
+        aug(image=image, mask=mask, cropping_bbox=bboxes[0])
+    elif augmentation_cls == A.RandomSizedBBoxSafeCrop:
+        # requires "bboxes" arg
+        aug = A.Compose([augmentation_cls(p=1, **params)], bbox_params=A.BboxParams(format="pascal_voc"))
+        aug(image=image, mask=mask, bboxes=bboxes)
+    else:
+        # standard args: image and mask
+        if augmentation_cls == A.FromFloat:
+            # requires float image
+            image = (image / 255).astype(np.float32)
+            assert not image.flags["C_CONTIGUOUS"]
+        elif augmentation_cls == A.MaskDropout:
+            # requires single channel mask
+            mask = mask[:, :, 0]
+
+        aug = augmentation_cls(p=1, **params)
+        aug(image=image, mask=mask)
+
+    # OK, if no exception is raised
