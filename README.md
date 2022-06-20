@@ -49,10 +49,18 @@ Here is an example of how you can apply some augmentations from Albumentations t
 
 
 ## Installation
-Albumentations requires Python 3.6 or higher. To install the latest version from PyPI:
+Albumentations requires Python 3.6 or higher. 
+
+To install the latest version from PyPI:
 
 ```
 pip install -U albumentations
+```
+
+To install the latest version from GitHub:
+
+```
+pip3 install git+https://github.com/cpuimage/albumentations
 ```
 
 Other installation options are described in the [documentation](https://albumentations.ai/docs/getting_started/installation/).
